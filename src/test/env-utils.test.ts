@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
+  clearEnvValuesForTests,
   clearEnvCache,
   getEnvValue,
   getEnvValueWithFallback,
@@ -9,30 +10,11 @@ import {
   parseEnvInteger,
   parseEnvNumber,
   readEnvUrl,
+  setEnvValueForTests,
 } from "@/lib/env-utils";
 
-const envRef = import.meta.env as unknown as Record<string, string | undefined>;
-
 const withEnv = (key: string, value: string | undefined) => {
-  if (value === undefined) {
-    delete envRef[key];
-    return;
-  }
-
-  envRef[key] = value;
-};
-
-const snapshotKeys = (keys: string[]) => {
-  return keys.reduce<Record<string, string | undefined>>((acc, key) => {
-    acc[key] = envRef[key];
-    return acc;
-  }, {});
-};
-
-const restoreKeys = (snapshot: Record<string, string | undefined>) => {
-  Object.entries(snapshot).forEach(([key, value]) => {
-    withEnv(key, value);
-  });
+  setEnvValueForTests(key, value);
 };
 
 describe("env-utils", () => {
@@ -45,16 +27,14 @@ describe("env-utils", () => {
     "VITE_TOKEN_CONTRACT_CHAIN",
   ];
 
-  let snapshot: Record<string, string | undefined>;
-
   beforeEach(() => {
-    snapshot = snapshotKeys(keys);
+    clearEnvValuesForTests();
     clearEnvCache();
     keys.forEach((key) => withEnv(key, undefined));
   });
 
   afterEach(() => {
-    restoreKeys(snapshot);
+    clearEnvValuesForTests();
     clearEnvCache();
   });
 
