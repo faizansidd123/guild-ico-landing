@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
+    --surface: 220 15% 92%;
+    --surface-light: 220 15% 88%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 182 100% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 204 92% 44%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 15% 92%;
+    --muted-foreground: 215 16% 42%;
+
+    --accent: 158 80% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 85%;
+    --input: 220 15% 90%;
+    --ring: 182 100% 35%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 15% 95%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 182 100% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 90%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 15% 85%;
+    --sidebar-ring: 182 100% 35%;
+
+    --grid-color: rgba(0, 180, 200, 0.08);
+    --glow-primary: 0 0 20px rgba(0, 245, 255, 0.3);
+    --glow-secondary: 0 0 20px rgba(0, 140, 255, 0.3);
+    --glow-accent: 0 0 20px rgba(0, 255, 163, 0.3);
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+  }
+  body {
+    @apply bg-background text-foreground font-manrope;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px) saturate(180%);
+    box-shadow: 0 0 0 1px rgba(0, 180, 200, 0.15), 0 4px 30px -5px rgba(0, 180, 200, 0.12);
+  }
+  .glow-cyan {
+    box-shadow: 0 4px 25px rgba(0, 180, 200, 0.25);
+  }
+  .glow-green {
+    box-shadow: 0 4px 25px rgba(0, 200, 130, 0.25);
+  }
+  .text-glow-cyan {
+    text-shadow: 0 0 20px rgba(0, 180, 200, 0.3);
+  }
+  .text-glow-white {
+    text-shadow: none;
+  }
+  .neon-border {
+    box-shadow: 0 0 0 1px rgba(0, 180, 200, 0.3), 0 2px 15px -3px rgba(0, 180, 200, 0.15);
+  }
+  .gradient-bg {
+    background: linear-gradient(180deg, hsl(220, 20%, 97%) 0%, hsl(220, 15%, 94%) 50%, hsl(210, 18%, 92%) 100%);
+  }
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.2) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite linear;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 4px 20px rgba(0, 180, 200, 0.2); }
+  50% { box-shadow: 0 4px 35px rgba(0, 180, 200, 0.35); }
+}
+
+@keyframes grid-scroll {
+  0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+  100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
+}
+
+@keyframes waveform {
+  0%, 100% { d: path("M0,50 Q25,30 50,50 T100,50 T150,50 T200,50"); }
+  50% { d: path("M0,50 Q25,70 50,50 T100,50 T150,50 T200,50"); }
+}
+
+/* Keep Alchemy auth modal above in-app dialogs. */
+[data-alchemy-auth-modal],
+[data-alchemy-auth-modal] * {
+  z-index: 9999 !important;
+}
+
+[data-alchemy-auth-modal-overlay] {
+  z-index: 9998 !important;
+}
+
+/* MoonPay SDK overlay */
+#moonpay-react-sdk-embedded-frame {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+  height: 100vh;
+  width: 100vw;
+  pointer-events: auto;
+}
+
+#moonpay-react-sdk-embedded-frame iframe {
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 0 !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  bottom: auto !important;
+  right: auto !important;
+}
+
+iframe[src*="moonpay.com"] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  bottom: auto !important;
+  right: auto !important;
+  margin: 0 !important;
+  pointer-events: auto !important;
+}
