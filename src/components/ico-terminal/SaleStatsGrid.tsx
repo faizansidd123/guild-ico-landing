@@ -5,10 +5,10 @@ type SaleStatsGridProps = {
   raisedUsd: number | null;
   hardCapUsd: number | null;
   soldTokens: number | null;
-  remainingTokens: number | null;
+  softCap: number | null;
 };
 
-const SaleStatsGrid = ({ raisedUsd, hardCapUsd, soldTokens, remainingTokens }: SaleStatsGridProps) => {
+const SaleStatsGrid = ({ raisedUsd, hardCapUsd, soldTokens, softCap }: SaleStatsGridProps) => {
   const formatUsdOrPlaceholder = (value: number | null) => (value === null ? "--" : usdFormatter.format(value));
   const formatNumberOrPlaceholder = (value: number | null) => (value === null ? "--" : numberFormatter.format(value));
 
@@ -28,7 +28,7 @@ const SaleStatsGrid = ({ raisedUsd, hardCapUsd, soldTokens, remainingTokens }: S
       </div>
       <div>
         <p className="text-[10px] text-muted-foreground font-mono uppercase">{appText.icoTerminal.labels.remaining}</p>
-        <p className="font-mono font-bold text-muted-foreground tabular-nums text-sm">{formatNumberOrPlaceholder(remainingTokens)}</p>
+        <p className="font-mono font-bold text-muted-foreground tabular-nums text-sm">{formatUsdOrPlaceholder(softCap)}</p>
       </div>
     </div>
   );

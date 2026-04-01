@@ -103,6 +103,7 @@ export const normalizeIcoDetails = (payload: unknown, fallback: IcoDetails): Ico
   const fallbackRaisedUsd = totalRaisedUsdt + totalRaisedUsdc + totalRaisedEth * tokensPerEth * tokenPriceUsd;
   const raisedUsd = readNumber(data, ["raisedUsd", "raised_usd", "totalRaisedUsd"], fallbackRaisedUsd || fallback.raisedUsd);
   const hardCapUsd = readNumber(data, ["hardCapUsd", "hard_cap_usd", "hardCap", "hard_cap"], fallback.hardCapUsd);
+  const softCap = readNumber(data, ["softCapUsd", "soft_cap_usd", "softCap", "soft_cap"], fallback.softCap ?? Number.NaN);
   const soldTokens = readNumber(data, ["soldTokens", "sold_tokens", "totalTokensSold", "total_tokens_sold"], fallback.soldTokens);
   const remainingTokens = readNumber(
     data,
@@ -118,6 +119,7 @@ export const normalizeIcoDetails = (payload: unknown, fallback: IcoDetails): Ico
     tokensPerEth,
     raisedUsd,
     hardCapUsd,
+    softCap: Number.isFinite(softCap) ? softCap : undefined,
     soldTokens,
     remainingTokens: Math.max(0, remainingTokens),
     progressPct: clampPercentage(progressPct),

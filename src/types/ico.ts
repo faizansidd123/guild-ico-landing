@@ -7,6 +7,7 @@ export type IcoDetails = {
   tokensPerEth: number;
   raisedUsd: number;
   hardCapUsd: number;
+  softCap?: number;
   soldTokens: number;
   remainingTokens: number;
   progressPct: number;

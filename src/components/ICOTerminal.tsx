@@ -108,6 +108,7 @@ const ICOTerminal = () => {
   const tokenPriceUsd = icoDetails?.tokenPriceUsd ?? null;
   const tokensPerEth = icoDetails?.tokensPerEth ?? null;
   const hardCapUsd = icoDetails?.hardCapUsd ?? null;
+  const softCap = icoDetails?.softCap ?? null;
   const raisedUsd = icoDetails?.raisedUsd ?? null;
   const soldTokens = icoDetails?.soldTokens ?? null;
   const remainingTokens = icoDetails?.remainingTokens ?? null;
@@ -639,7 +640,7 @@ const ICOTerminal = () => {
         raisedUsd={raisedUsd}
         hardCapUsd={hardCapUsd}
         soldTokens={soldTokens}
-        remainingTokens={remainingTokens}
+        softCap={softCap}
       />
 
       <SaleProgress progressPct={progressPct} />
