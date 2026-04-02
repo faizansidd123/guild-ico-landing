@@ -98,6 +98,10 @@ const ICOTerminal = () => {
 
   const saleStartsAt = icoDetails?.saleStartsAt || "";
   const saleEndsAt = icoDetails?.saleEndsAt || saleConfig.saleEndsAt;
+  const hasApiMarkedSaleEnded =
+    icoDetails?.saleStatus.trim().toLowerCase() === "ended" &&
+    icoDetails.isActive === false &&
+    icoDetails.isFinalized === true;
   const hasFutureSaleStart = saleStartsAt.length > 0 && new Date(saleStartsAt).getTime() > Date.now();
   const countdownTargetIso = hasFutureSaleStart ? saleStartsAt : saleEndsAt;
   const countdownLabel = hasFutureSaleStart
@@ -138,7 +142,7 @@ const ICOTerminal = () => {
   const hasExceededMaxContribution = amountEthEquivalent > saleConfig.maxContributionEth;
   const hasInsufficientEthBalance = paymentMethod === "ETH" && amountEthEquivalent > walletBalanceEth;
 
-  const saleClosed = isSaleClosed(saleEndsAt);
+  const saleClosed = hasApiMarkedSaleEnded || isSaleClosed(saleEndsAt);
   const selectedChainId = expectedChainId;
   const moonPayCurrencyCode = resolveMoonPayCurrencyCode(selectedChainId);
   const moonPayTopUpAmount = useMemo(
@@ -616,7 +620,7 @@ const ICOTerminal = () => {
         : walletError;
 
   const acquireDisabled =
-    processing || isConnecting || isActionPending || !countdown || countdown.total === 0;
+    saleClosed || processing || isConnecting || isActionPending || !countdown || countdown.total === 0;
   const claimDisabled = processing || isConnecting || isActionPending;
   const addTokenDisabled = addingToken || processing || isConnecting || isActionPending;
   const moonPayDisabled = processing || isConnecting || isActionPending;
@@ -645,7 +649,18 @@ const ICOTerminal = () => {
 
       <SaleProgress progressPct={progressPct} />
 
-      {countdown ? <CountdownDisplay countdown={countdown} label={countdownLabel} /> : null}
+      {hasApiMarkedSaleEnded ? (
+        <div className="rounded-xl border border-primary/25 bg-primary/10 px-3 py-3 text-center neon-border shadow-[0_0_0_1px_rgba(0,245,255,0.04)]">
+          <p className="font-mono text-sm uppercase tracking-wide text-primary">
+            {appText.icoTerminal.labels.countdownEndedTitle}
+          </p>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {appText.icoTerminal.labels.countdownEndedDescription}
+          </p>
+        </div>
+      ) : countdown ? (
+        <CountdownDisplay countdown={countdown} label={countdownLabel} />
+      ) : null}
 
       <TerminalMarketMeta tokenPriceUsd={tokenPriceUsd} section="network" />
 

@@ -321,6 +321,8 @@ export const appText = {
       soldSuffix: "% SOLD",
       countdownStartsIn: "Starts in",
       countdownEndsIn: "Ends in",
+      countdownEndedTitle: "SALE ENDED",
+      countdownEndedDescription: "This sale phase has ended.",
       countdown: {
         days: "Days",
         hours: "Hours",

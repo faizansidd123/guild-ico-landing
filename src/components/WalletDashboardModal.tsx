@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { appText } from "@/content/app-text";
 import { chainById, saleConfig } from "@/config/sale";
 import { getErrorMessage } from "@/lib/error-feedback";
+import { formatReadableBalance } from "@/lib/formatters";
 import { resolveMoonPayCurrencyCode } from "@/lib/moonpay";
 import {
   fetchWalletTokenBalances,
@@ -54,14 +55,6 @@ type WalletDashboardModalProps = {
 };
 
 const walletAddressPattern = /^0x[a-fA-F0-9]{40}$/;
-
-const formatReadableBalance = (value: string, digits = 6) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return "0";
-  }
-  return parsed.toFixed(digits).replace(/\.?0+$/, "");
-};
 
 const parseWei = (value: string) => {
   try {
@@ -342,18 +335,24 @@ const WalletDashboardModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md border border-slate-800 bg-[#0f1115] p-0 text-white">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md border border-slate-800 bg-[#0f1115] p-0 text-white">
         <DialogTitle className="sr-only">Wallet</DialogTitle>
         <DialogDescription className="sr-only">Wallet actions and account information.</DialogDescription>
 
         {view === "home" ? (
-          <div className="flex flex-col gap-4 p-6">
-            <div className="flex items-start justify-between gap-3 pr-7">
+          <div className="mx-auto flex w-full max-w-[22rem] flex-col gap-4 px-[0px] py-6">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-col gap-1">
-                <p className="text-sm font-semibold">{hasAddress ? displayAddress : "Not connected"}</p>
+                <p className="break-all pr-2 text-sm font-semibold">{hasAddress ? displayAddress : "Not connected"}</p>
                 <p className="text-xs text-slate-400">Guild Wallet</p>
               </div>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-white" onClick={() => void copyAddress()}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 text-slate-300 hover:text-white"
+                onClick={() => void copyAddress()}
+              >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
@@ -409,8 +408,8 @@ const WalletDashboardModal = ({
         ) : null}
 
         {view === "send" ? (
-          <div className="flex flex-col gap-4 p-6">
-            <div className="flex items-center justify-between pr-7">
+          <div className="mx-auto flex w-full max-w-[22rem] flex-col gap-4 px-[10px] py-6">
+            <div className="flex items-center justify-between">
               {renderBackButton()}
               <p className="text-sm font-semibold">Send Funds</p>
             </div>
@@ -457,8 +456,8 @@ const WalletDashboardModal = ({
         ) : null}
 
         {view === "receive" ? (
-          <div className="flex flex-col gap-4 p-6">
-            <div className="flex items-center justify-between pr-7">
+          <div className="mx-auto flex w-full max-w-[22rem] flex-col gap-4 px-[10px] py-6">
+            <div className="flex items-center justify-between">
               {renderBackButton()}
               <p className="text-sm font-semibold">Receive</p>
             </div>
@@ -489,8 +488,8 @@ const WalletDashboardModal = ({
         ) : null}
 
         {view === "transactions" ? (
-          <div className="flex flex-col gap-4 p-6">
-            <div className="flex items-center justify-between pr-7">
+          <div className="mx-auto flex w-full max-w-[22rem] flex-col gap-4 px-[10px] py-6">
+            <div className="flex items-center justify-between">
               {renderBackButton()}
               <p className="text-sm font-semibold">Transactions</p>
             </div>
@@ -529,8 +528,8 @@ const WalletDashboardModal = ({
         ) : null}
 
         {view === "assets" ? (
-          <div className="flex flex-col gap-4 p-6">
-            <div className="flex items-center justify-between pr-7">
+          <div className="mx-auto flex w-full max-w-[22rem] flex-col gap-4 px-[10px] py-6">
+            <div className="flex items-center justify-between">
               {renderBackButton()}
               <p className="text-sm font-semibold">View Assets</p>
             </div>
