@@ -344,6 +344,7 @@ export const appText = {
     },
     cta: {
       saleClosed: "SALE CLOSED",
+      saleNotStarted: "SALE NOT STARTED",
       connecting: "CONNECTING...",
       processing: "PROCESSING...",
       connectWallet: "CONNECT WALLET",
@@ -371,6 +372,8 @@ export const appText = {
       connectedToPrefix: "Connected to",
       saleClosedTitle: "Sale closed",
       saleClosedDescription: "This sale phase has ended.",
+      saleNotStartedTitle: "Sale not started",
+      saleNotStartedDescription: "Token acquisition will open once the ICO start time is reached.",
       confirmationRequiredTitle: "Confirmation required",
       confirmationRequiredDescription: "Please accept the risk and terms checkboxes before continuing.",
       invalidAmountTitle: "Invalid amount",

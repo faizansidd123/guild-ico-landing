@@ -166,6 +166,7 @@ describe("ICOTerminal MoonPay top-up", () => {
     mockState.icoDetails.saleResult = "";
     mockState.icoDetails.isActive = true;
     mockState.icoDetails.isFinalized = false;
+    mockState.icoDetails.saleStartsAt = "";
     mockState.icoDetails.totalRaisedEth = 0;
     mockState.icoDetails.totalRaisedUsdt = 0;
     mockState.icoDetails.totalRaisedUsdc = 0;
@@ -198,6 +199,16 @@ describe("ICOTerminal MoonPay top-up", () => {
         paymentMethod: "ETH",
       }),
     );
+  });
+
+  it("disables acquisition before the ICO start time is reached", () => {
+    mockState.icoDetails.saleStartsAt = "2026-12-01T00:00:00.000Z";
+
+    renderTerminal();
+
+    expect(screen.getByText("Starts in")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sale not started/i })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /moonpay/i })).not.toBeInTheDocument();
   });
 
   it("hides the MoonPay top-up action when the wallet balance already covers the purchase", () => {

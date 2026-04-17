@@ -143,6 +143,7 @@ const ICOTerminal = () => {
   const hasInsufficientEthBalance = paymentMethod === "ETH" && amountEthEquivalent > walletBalanceEth;
 
   const saleClosed = hasApiMarkedSaleEnded || isSaleClosed(saleEndsAt);
+  const saleNotStarted = hasFutureSaleStart;
   const selectedChainId = expectedChainId;
   const moonPayCurrencyCode = resolveMoonPayCurrencyCode(selectedChainId);
   const moonPayTopUpAmount = useMemo(
@@ -235,6 +236,7 @@ const ICOTerminal = () => {
 
   const ctaLabel = useMemo(() => {
     if (saleClosed) return appText.icoTerminal.cta.saleClosed;
+    if (saleNotStarted) return appText.icoTerminal.cta.saleNotStarted;
     if (isConnecting) return appText.icoTerminal.cta.connecting;
     if (isActionPending || processing) return appText.icoTerminal.cta.processing;
     if (account.length === 0) return appText.icoTerminal.cta.connectWallet;
@@ -245,7 +247,7 @@ const ICOTerminal = () => {
     if (paymentMethod === "USDC") return appText.icoTerminal.cta.buyWithUsdc;
     if (paymentMethod === "USDT") return appText.icoTerminal.cta.buyWithUsdt;
     return `${appText.icoTerminal.cta.acquirePrefix}${tokenSymbol}`;
-  }, [account.length, chainId, isActionPending, isConnecting, paymentMethod, processing, saleClosed, selectedChainId, tokenSymbol]);
+  }, [account.length, chainId, isActionPending, isConnecting, paymentMethod, processing, saleClosed, saleNotStarted, selectedChainId, tokenSymbol]);
 
   const visibleClaimActions = useMemo<ClaimAction[]>(() => {
     if (!icoDetails || !userIcoValue) return [];
@@ -330,6 +332,15 @@ const ICOTerminal = () => {
         variant: "destructive",
         title: appText.icoTerminal.toasts.saleClosedTitle,
         description: appText.icoTerminal.toasts.saleClosedDescription,
+      });
+      return;
+    }
+
+    if (saleNotStarted) {
+      toast({
+        variant: "destructive",
+        title: appText.icoTerminal.toasts.saleNotStartedTitle,
+        description: appText.icoTerminal.toasts.saleNotStartedDescription,
       });
       return;
     }
@@ -620,13 +631,19 @@ const ICOTerminal = () => {
         : walletError;
 
   const acquireDisabled =
-    saleClosed || processing || isConnecting || isActionPending || !countdown || countdown.total === 0;
+    saleClosed || saleNotStarted || processing || isConnecting || isActionPending || !countdown || countdown.total === 0;
   const claimDisabled = processing || isConnecting || isActionPending;
   const addTokenDisabled = addingToken || processing || isConnecting || isActionPending;
   const moonPayDisabled = processing || isConnecting || isActionPending;
   const showAddTokenButton = canAddTokenToWallet;
   const showMoonPayTopUpButton =
-    !saleClosed && account.length > 0 && !hasInvalidAmount && !hasExceededMaxContribution && hasInsufficientEthBalance && !!moonPayTopUpAmount;
+    !saleClosed &&
+    !saleNotStarted &&
+    account.length > 0 &&
+    !hasInvalidAmount &&
+    !hasExceededMaxContribution &&
+    hasInsufficientEthBalance &&
+    !!moonPayTopUpAmount;
   const moonPayLabel = `TOP UP ${moonPayTopUpAmount} ETH WITH MOONPAY`;
 
   return (
