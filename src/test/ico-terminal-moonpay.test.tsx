@@ -235,6 +235,20 @@ describe("ICOTerminal MoonPay top-up", () => {
     expect(screen.queryByRole("button", { name: /claim stable refund/i })).not.toBeInTheDocument();
   });
 
+  it("replaces the countdown with an ended message when the API marks the ICO as ended", () => {
+    mockState.icoDetails.saleStatus = "ended";
+    mockState.icoDetails.saleResult = "success";
+    mockState.icoDetails.isActive = false;
+    mockState.icoDetails.isFinalized = true;
+
+    renderTerminal();
+
+    expect(screen.getByText("SALE ENDED")).toBeInTheDocument();
+    expect(screen.getByText("This sale phase has ended.")).toBeInTheDocument();
+    expect(screen.queryByText("Ends in")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sale closed/i })).toBeDisabled();
+  });
+
   it("does not show the claim token action when the wallet has no claimable tokens", () => {
     mockState.icoDetails.saleStatus = "ended";
     mockState.icoDetails.saleResult = "success";

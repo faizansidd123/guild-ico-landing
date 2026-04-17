@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   dateTimeFormatter,
+  formatReadableBalance,
   numberFormatter,
   tokenFormatter,
   usdFormatter,
@@ -36,5 +37,17 @@ describe("formatters", () => {
   it("formats date and time together", () => {
     const formatted = dateTimeFormatter.format(new Date("2026-03-18T12:30:00Z"));
     expect(formatted.length).toBeGreaterThan(5);
+  });
+
+  it("formats scientific notation balances without exponential output", () => {
+    expect(formatReadableBalance("1e+22", 6)).toBe("10000000000000000000000");
+  });
+
+  it("formats very large decimal balances without losing precision to Number coercion", () => {
+    expect(formatReadableBalance("9999999999999999999997.999753", 6)).toBe("9999999999999999999997.999753");
+  });
+
+  it("rounds fractional balance strings to the requested precision", () => {
+    expect(formatReadableBalance("1.23456789", 6)).toBe("1.234568");
   });
 });
