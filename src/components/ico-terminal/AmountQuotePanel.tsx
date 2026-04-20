@@ -61,12 +61,12 @@ const AmountQuotePanel = ({
         </p>
       ) : null}
 
-      <p className="text-[10px] text-center text-muted-foreground font-mono leading-tight">
+      {/* <p className="text-[10px] text-center text-muted-foreground font-mono leading-tight">
         1 ETH = {numberFormatter.format(tokensPerEth)} {tokenSymbol}
       </p>
       <p className="text-[10px] text-center text-muted-foreground font-mono leading-tight">
         {appText.icoTerminal.labels.estimatedValuePrefix} {usdFormatter.format(usdValue || 0)}
-      </p>
+      </p> */}
     </div>
   );
 };
