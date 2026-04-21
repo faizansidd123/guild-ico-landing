@@ -39,20 +39,16 @@ export const appText = {
   },
   footer: {
     socialHeading: "Social",
+    legalHeading: "Legal",
     socialLinks: {
-      x: "Twitter / X",
+      x: "X",
+      instagram: "Instagram",
+      tiktok: "TikTok",
       discord: "Discord",
-      telegram: "Telegram",
-      medium: "Medium",
     },
-    disclaimerHeading: "ICO Disclaimer",
-    disclaimerBody:
-      "$GILD tokens are utility tokens and do not represent securities. Participation in the token sale involves risk. This is not financial advice. Please conduct your own research before participating.",
     legalLinks: {
-      terms: "Terms",
-      privacy: "Privacy",
-      risk: "Risk Disclosure",
-      cookies: "Cookies",
+      terms: "Terms of Service",
+      privacy: "Privacy Policy",
     },
     rightsReservedSuffix: "All rights reserved.",
   },
@@ -61,50 +57,6 @@ export const appText = {
     lastUpdatedPrefix: "Last updated:",
   },
   legalDocuments: {
-    terms: {
-      title: "Token Sale Terms",
-      updatedAt: "March 18, 2026",
-      sections: [
-        {
-          heading: "Eligibility",
-          body: "Participants must be legally eligible in their jurisdiction and complete required compliance checks before purchase.",
-        },
-        {
-          heading: "Utility Token Notice",
-          body: "$GILD is presented as a utility token for platform functionality. Participation does not guarantee profits.",
-        },
-        {
-          heading: "No Investment Advice",
-          body: "Information on this website is educational and product-related. It is not financial, legal, or tax advice.",
-        },
-        {
-          heading: "Risk Acknowledgement",
-          body: "Crypto assets are volatile and may lose value. Smart contract, liquidity, and regulatory risks can affect outcomes.",
-        },
-      ],
-    } satisfies LegalDocumentContent,
-    privacy: {
-      title: "Privacy Policy",
-      updatedAt: "March 18, 2026",
-      sections: [
-        {
-          heading: "Data Collected",
-          body: "We may collect wallet addresses, email submissions, and compliance-related details where required.",
-        },
-        {
-          heading: "Usage",
-          body: "Data is used for sale administration, compliance checks, and user communication about platform updates.",
-        },
-        {
-          heading: "Retention",
-          body: "Records are retained based on legal obligations and operational requirements, then securely removed.",
-        },
-        {
-          heading: "Contact",
-          body: "For privacy requests, contact privacy@guildprotocol.io.",
-        },
-      ],
-    } satisfies LegalDocumentContent,
     cookies: {
       title: "Cookie Policy",
       updatedAt: "March 18, 2026",
@@ -190,6 +142,7 @@ export const appText = {
   },
   community: {
     imageAlt: "Guild Community",
+    ctaLabel: "Visit GuildTogether.com",
   },
   waitlist: {
     validation: {
@@ -222,14 +175,12 @@ export const appText = {
   trust: {
     heading: {
       eyebrow: "TRUST CENTER",
-      title: "Contracts, Audit and Verification",
+      title: "Contracts and Addresses",
     },
     addressesTitle: "On-chain Addresses",
-    verificationTitle: "Verification Links",
     labels: {
-      treasury: "Treasury",
       tokenSaleContract: "Token Sale Contract",
-      usdcContract: "USDC Contract",
+      guildTokenContract: "Guild Token Contract",
       notConfigured: "Not configured",
     },
     copyButton: "Copy",
@@ -239,25 +190,16 @@ export const appText = {
       configureSuffix: "in environment variables.",
       copiedSuffix: "copied",
     },
-    verificationLinks: {
-      auditReport: "Audit Report",
-      whitepaper: "Whitepaper",
-      docs: "Developer Docs",
-      etherscan: "Etherscan Contract View",
-      basescan: "BaseScan Contract View",
-    },
     copyLabels: {
-      treasuryAddress: "Treasury address",
       saleContract: "Sale contract",
-      usdcContract: "USDC contract",
+      guildTokenContract: "Guild token contract",
     },
   },
   transactions: {
     heading: {
       eyebrow: "LIVE FEED",
-      title: "All User Transactions",
-      description:
-        "Integrated with paginated transaction API with fallback mock data until final endpoints are ready.",
+      title: "Live Transactions",
+      description: "Live transaction feed sourced from the sale API.",
     },
     totalRecordsPrefix: "Total records:",
     syncingSuffix: "• Syncing...",
@@ -271,15 +213,14 @@ export const appText = {
     previous: "Previous",
     next: "Next",
     tableHeaders: {
-      date: "Date",
-      wallet: "Wallet",
-      txHash: "Tx Hash",
-      chain: "Chain",
-      method: "Method",
-      contribution: "Contribution",
+      date: "Created At",
+      wallet: "Wallet Address",
+      ico: "ICO",
+      type: "Type",
+      currency: "Currency",
+      amount: "Amount",
       tokens: "Tokens",
-      value: "Value",
-      status: "Status",
+      txHash: "Transaction Hash",
     },
   },
   tokenomics: {
@@ -321,8 +262,9 @@ export const appText = {
       soldSuffix: "% SOLD",
       countdownStartsIn: "Starts in",
       countdownEndsIn: "Ends in",
-      countdownEndedTitle: "SALE ENDED",
-      countdownEndedDescription: "This sale phase has ended.",
+      saleStatus: "Sale status",
+      saleEnded: "Sale ended",
+      saleEndedDescription: "This sale phase has ended.",
       countdown: {
         days: "Days",
         hours: "Hours",
@@ -344,7 +286,6 @@ export const appText = {
     },
     cta: {
       saleClosed: "SALE CLOSED",
-      saleNotStarted: "SALE NOT STARTED",
       connecting: "CONNECTING...",
       processing: "PROCESSING...",
       connectWallet: "CONNECT WALLET",
@@ -359,6 +300,7 @@ export const appText = {
       maximumPrefix: "Maximum contribution is",
       ethEquivalentSuffix: "ETH equivalent.",
       insufficientBalance: "Insufficient wallet balance.",
+      quotePending: "Please wait for the quote to finish loading.",
     },
     throwMessages: {
       saleContractMissing: "Configure VITE_SALE_CONTRACT_ADDRESS with a valid ICO contract address.",
@@ -372,8 +314,6 @@ export const appText = {
       connectedToPrefix: "Connected to",
       saleClosedTitle: "Sale closed",
       saleClosedDescription: "This sale phase has ended.",
-      saleNotStartedTitle: "Sale not started",
-      saleNotStartedDescription: "Token acquisition will open once the ICO start time is reached.",
       confirmationRequiredTitle: "Confirmation required",
       confirmationRequiredDescription: "Please accept the risk and terms checkboxes before continuing.",
       invalidAmountTitle: "Invalid amount",

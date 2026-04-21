@@ -24,8 +24,8 @@ const LegalPage = ({ title, updatedAt, sections }: LegalPageProps) => {
           </p>
 
           <div className="space-y-8 mt-8">
-            {sections.map((section) => (
-              <section key={section.heading}>
+            {sections.map((section, index) => (
+              <section key={`${section.heading}-${index}`}>
                 <h2 className="text-xl font-semibold mb-2">{section.heading}</h2>
                 <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{section.body}</p>
               </section>

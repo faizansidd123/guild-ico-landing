@@ -69,7 +69,7 @@ const normalizeSaleStats = (payload: Partial<SaleStats>): SaleStats | null => {
     hardCapUsd,
     soldTokens,
     remainingTokens: Number(payload.remainingTokens ?? saleConfig.totalTokensForSale - soldTokens),
-    progressPct: Number(payload.progressPct ?? (raisedUsd / hardCapUsd) * 100),
+    progressPct: Number(payload.progressPct ?? (soldTokens / hardCapUsd) * 100),
     saleEndsAt: payload.saleEndsAt || saleConfig.saleEndsAt,
   };
 
@@ -83,7 +83,7 @@ const normalizeSaleStats = (payload: Partial<SaleStats>): SaleStats | null => {
 const makeStatsFromProgress = (progress: LocalProgress): SaleStats => {
   const safeProgress = sanitizeProgress(progress);
   const remainingTokens = Math.max(0, saleConfig.totalTokensForSale - safeProgress.soldTokens);
-  const progressPct = Math.min(100, (safeProgress.raisedUsd / saleConfig.hardCapUsd) * 100);
+  const progressPct = Math.min(100, (safeProgress.soldTokens / saleConfig.hardCapUsd) * 100);
 
   return {
     tokenPriceUsd: saleConfig.tokenPriceUsd,

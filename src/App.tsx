@@ -9,8 +9,6 @@ import { AlchemyAccountKitProvider } from "@/providers/alchemyAccountKitProvider
 import { MoonPayProviderWrapper } from "@/providers/moonpayProvider";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import TermsPage from "./pages/legal/TermsPage.tsx";
-import PrivacyPage from "./pages/legal/PrivacyPage.tsx";
 import RiskDisclosurePage from "./pages/legal/RiskDisclosurePage.tsx";
 import CookiesPage from "./pages/legal/CookiesPage.tsx";
 import { useEffect } from "react";
@@ -40,8 +38,6 @@ const App = () => (
             <RouteTracker />
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/legal/terms" element={<TermsPage />} />
-              <Route path="/legal/privacy" element={<PrivacyPage />} />
               <Route path="/legal/risk-disclosure" element={<RiskDisclosurePage />} />
               <Route path="/legal/cookies" element={<CookiesPage />} />
               <Route path="*" element={<NotFound />} />

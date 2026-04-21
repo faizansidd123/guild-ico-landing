@@ -23,9 +23,11 @@ import type { ConversionQuote, IcoDetails, UserTransaction } from "@/types/ico";
 const fallbackIcoDetails: IcoDetails = {
   tokenName: "Guild Token",
   tokenSymbol: "$GILD",
+  tokenAddress: "0xC106e3Af20B0742f713ef4c28810dF39E23DA070",
   tokenPriceUsd: 0.05,
   tokensPerEth: 20000,
   raisedUsd: 10,
+  softCap: 50,
   hardCapUsd: 100,
   soldTokens: 100,
   remainingTokens: 900,
@@ -102,6 +104,7 @@ describe("ico-normalizers", () => {
 
     expect(details.tokenName).toBe(saleConfig.tokenName);
     expect(details.tokenSymbol).toBe(saleConfig.tokenSymbol);
+    expect(details.tokenAddress).toBe(saleConfig.walletTokenAddress);
     expect(details.tokenPriceUsd).toBe(saleConfig.tokenPriceUsd);
     expect(details.tokensPerEth).toBe(saleConfig.tokensPerEth);
     expect(details.hardCapUsd).toBe(saleConfig.hardCapUsd);
@@ -176,17 +179,18 @@ describe("ico-normalizers", () => {
         data: {
           token_name: "Guild Prime",
           token_symbol: "GPR",
+          token_address: "0x00000000000000000000000000000000000000aa",
           token_price_usd: "0.1",
           tokens_per_eth: "12000",
           totalRaisedETH: "10",
           total_raised_usdt: "1000",
           total_raised_usdc: "500",
           raised_usd: "250000",
+          soft_cap: "500",
           hard_cap_usd: "1000000",
-          sold_tokens: "5000000",
-          remaining_tokens: "95000000",
-          progress: "25",
-          start_date: "2026-05-01T00:00:00Z",
+          sold_tokens: "250000",
+          remaining_tokens: "750000",
+          sale_starts_at: "2026-05-01T00:00:00Z",
           sale_ends_at: "2026-06-01T00:00:00Z",
           min_contribution_eth: "0.1",
           max_contribution_eth: "50",
@@ -201,12 +205,14 @@ describe("ico-normalizers", () => {
 
     expect(result.tokenName).toBe("Guild Prime");
     expect(result.tokenSymbol).toBe("GPR");
+    expect(result.tokenAddress).toBe("0x00000000000000000000000000000000000000aa");
     expect(result.tokenPriceUsd).toBe(0.1);
     expect(result.tokensPerEth).toBe(12000);
     expect(result.raisedUsd).toBe(250000);
+    expect(result.softCap).toBe(500);
     expect(result.hardCapUsd).toBe(1000000);
-    expect(result.soldTokens).toBe(5000000);
-    expect(result.remainingTokens).toBe(95000000);
+    expect(result.soldTokens).toBe(250000);
+    expect(result.remainingTokens).toBe(750000);
     expect(result.progressPct).toBe(25);
     expect(result.saleStartsAt).toBe("2026-05-01T00:00:00.000Z");
     expect(result.saleStatus).toBe("ended");
@@ -228,6 +234,23 @@ describe("ico-normalizers", () => {
 
     expect(result.progressPct).toBe(100);
     expect(result.remainingTokens).toBe(0);
+  });
+
+  it("normalizeIcoDetails derives raisedUsd from per-currency totals when the API omits it", () => {
+    const result = normalizeIcoDetails(
+      {
+        data: {
+          tokenPriceUsd: "0.25",
+          tokensPerEth: "1000",
+          totalRaisedETH: "2",
+          totalRaisedUSDT: "100",
+          totalRaisedUSDC: "50",
+        },
+      },
+      fallbackIcoDetails,
+    );
+
+    expect(result.raisedUsd).toBe(650);
   });
 
   it("normalizeUserIcoValue returns fallback for invalid payload", () => {
@@ -338,26 +361,33 @@ describe("ico-normalizers", () => {
   it("normalizeTransaction builds consistent transaction model", () => {
     const result = normalizeTransaction(
       {
-        id: "tx-1",
-        walletAddress: "0x0000000000000000000000000000000000000003",
-        txHash: "0xabcdef",
-        chain: "Base",
-        paymentMethod: "USDC",
-        amountIn: "100",
-        amountEthEquivalent: "0.05",
-        tokenAmount: "2000",
-        usdValue: "100",
-        status: "completed",
+        _id: "69e614dfae905aaac5e32c64",
+        walletAddress: "0xb2f8dd8b135a10d258ad169d65fe5b69a3cb0c5b",
+        icoId: {
+          name: "$GILD",
+        },
+        currency: "USDC",
+        amount: "1.008357",
+        tokens: "5.45",
+        transactionHash: "0x7d835423daab50822b17c03e0967e5e1dc9b446caa5db839ac3cda1995e31897",
+        type: "PURCHASE",
         createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:01:00Z",
       },
       1,
     );
 
-    expect(result.id).toBe("tx-1");
+    expect(result.id).toBe("69e614dfae905aaac5e32c64");
     expect(result.paymentMethod).toBe("USDC");
-    expect(result.amountIn).toBe(100);
+    expect(result.amountIn).toBe(1.008357);
+    expect(result.amountRaw).toBe(1.008357);
+    expect(result.currency).toBe("USDC");
+    expect(result.transactionType).toBe("PURCHASE");
+    expect(result.icoName).toBe("$GILD");
+    expect(result.txHash).toBe("0x7d835423daab50822b17c03e0967e5e1dc9b446caa5db839ac3cda1995e31897");
     expect(result.status).toBe("confirmed");
     expect(result.createdAt).toBe("2026-01-01T00:00:00.000Z");
+    expect(result.updatedAt).toBe("2026-01-01T00:01:00.000Z");
   });
 
   it("normalizeTransaction fills defaults and fallback id", () => {
@@ -433,9 +463,13 @@ describe("ico-normalizers", () => {
       fallbackTransactions,
     );
 
-    expect(result.items).toHaveLength(0);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].id).toBe("b");
+    expect(result.items[0].status).toBe("failed");
     expect(result.page).toBe(3);
     expect(result.pageSize).toBe(5);
+    expect(result.total).toBe(1);
+    expect(result.totalPages).toBe(10);
   });
 
   it("normalizeTransactionsPayload supports data.results and pageCount", () => {

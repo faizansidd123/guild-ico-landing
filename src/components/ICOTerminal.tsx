@@ -24,7 +24,7 @@ import { useIcoActions } from "@/hooks/use-ico-actions";
 import { USER_ICO_VALUE_QUERY_KEY, useUserIcoValue } from "@/hooks/use-user-ico-value";
 import { useWalletAuth } from "@/hooks/use-wallet-auth";
 import { USER_TRANSACTIONS_QUERY_KEY } from "@/hooks/use-user-transactions";
-import { getStoredReferral, trackEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/analytics";
 import { getErrorMessage, notifyUnknownError, throwToastedError } from "@/lib/error-feedback";
 import { ethAmountFormatter, tokenFormatter } from "@/lib/formatters";
 import { getStableAllowance } from "@/lib/ico-contract";
@@ -44,7 +44,7 @@ const formatQuoteInputValue = (value: number) => {
 
   return value.toLocaleString("en-US", {
     useGrouping: false,
-    maximumFractionDigits: 18,
+    maximumFractionDigits: 5,
   });
 };
 
@@ -98,11 +98,12 @@ const ICOTerminal = () => {
 
   const saleStartsAt = icoDetails?.saleStartsAt || "";
   const saleEndsAt = icoDetails?.saleEndsAt || saleConfig.saleEndsAt;
-  const hasApiMarkedSaleEnded =
+  const isSaleEndedFromApi =
     icoDetails?.saleStatus.trim().toLowerCase() === "ended" &&
-    icoDetails.isActive === false &&
-    icoDetails.isFinalized === true;
+    icoDetails?.isActive === false &&
+    icoDetails?.isFinalized === true;
   const hasFutureSaleStart = saleStartsAt.length > 0 && new Date(saleStartsAt).getTime() > Date.now();
+  const saleNotStarted = hasFutureSaleStart;
   const countdownTargetIso = hasFutureSaleStart ? saleStartsAt : saleEndsAt;
   const countdownLabel = hasFutureSaleStart
     ? appText.icoTerminal.labels.countdownStartsIn
@@ -111,45 +112,45 @@ const ICOTerminal = () => {
 
   const tokenPriceUsd = icoDetails?.tokenPriceUsd ?? null;
   const tokensPerEth = icoDetails?.tokensPerEth ?? null;
-  const hardCapUsd = icoDetails?.hardCapUsd ?? null;
   const softCap = icoDetails?.softCap ?? null;
-  const raisedUsd = icoDetails?.raisedUsd ?? null;
+  const hardCapUsd = icoDetails?.hardCapUsd ?? null;
   const soldTokens = icoDetails?.soldTokens ?? null;
-  const remainingTokens = icoDetails?.remainingTokens ?? null;
-  const progressPct = icoDetails ? Math.max(0, Math.min(100, icoDetails.progressPct || 0)) : null;
+  const totalRaisedEth = icoDetails?.totalRaisedEth ?? null;
+  const totalRaisedUsdt = icoDetails?.totalRaisedUsdt ?? null;
+  const totalRaisedUsdc = icoDetails?.totalRaisedUsdc ?? null;
+  const progressPct =
+    soldTokens !== null && hardCapUsd !== null && hardCapUsd > 0
+      ? Math.max(0, Math.min(100, (soldTokens / hardCapUsd) * 100))
+      : null;
   const tokenSymbol = icoDetails?.tokenSymbol || saleConfig.tokenSymbol;
-  const tokenPriceUsdForCalc = tokenPriceUsd ?? saleConfig.tokenPriceUsd;
   const tokensPerEthForCalc = tokensPerEth ?? saleConfig.tokensPerEth;
   const isStablePayment = paymentMethod === "USDC" || paymentMethod === "USDT";
   const walletBalanceEth = Number(balanceEth || 0);
 
   const localTokenAmount = sourceAmount;
-  const localPayAmount =
-    paymentMethod === "ETH"
-      ? localTokenAmount / Math.max(tokensPerEthForCalc, 0.000001)
-      : localTokenAmount * tokenPriceUsdForCalc;
-
   const tokenAmount = conversionQuote?.tokenAmount ?? localTokenAmount;
-  const payAmountResolved = conversionQuote?.amountIn ?? localPayAmount;
+  const isQuotePending = sourceAmount > 0 && !conversionQuote;
+  const payAmountResolved = conversionQuote?.amountIn ?? null;
   const amountEthEquivalent =
     conversionQuote?.amountEthEquivalent ??
-    (paymentMethod === "ETH" ? payAmountResolved : tokenAmount / Math.max(tokensPerEthForCalc, 0.000001));
-  const usdValue = conversionQuote?.usdValue ?? tokenAmount * tokenPriceUsdForCalc;
+    (conversionQuote && paymentMethod !== "ETH" ? tokenAmount / Math.max(tokensPerEthForCalc, 0.000001) : null);
+  const hasResolvedQuote = typeof payAmountResolved === "number" && typeof amountEthEquivalent === "number";
   const isAmountDebouncing = sourceAmount > 0 && Math.abs(debouncedAmount - sourceAmount) > 0.0000001;
-  const isAmountCalculating = sourceAmount > 0 && (isAmountDebouncing || (isConversionFetching && !conversionQuote));
-  const payAmountDisplay = formatQuoteInputValue(payAmountResolved);
-  const hasInvalidAmount = Number.isFinite(payAmountResolved) === false || payAmountResolved <= 0 || tokenAmount <= 0;
-  const hasExceededMaxContribution = amountEthEquivalent > saleConfig.maxContributionEth;
-  const hasInsufficientEthBalance = paymentMethod === "ETH" && amountEthEquivalent > walletBalanceEth;
+  const isAmountCalculating = sourceAmount > 0 && (isAmountDebouncing || isQuotePending || (isConversionFetching && !conversionQuote));
+  const payAmountDisplay = payAmountResolved === null ? "" : formatQuoteInputValue(payAmountResolved);
+  const hasInvalidAmount =
+    sourceAmount > 0 && !isQuotePending && (!hasResolvedQuote || payAmountResolved <= 0 || tokenAmount <= 0);
+  const hasExceededMaxContribution = hasResolvedQuote && amountEthEquivalent > saleConfig.maxContributionEth;
+  const hasInsufficientEthBalance =
+    paymentMethod === "ETH" && account.length > 0 && hasResolvedQuote && amountEthEquivalent > walletBalanceEth;
 
-  const saleClosed = hasApiMarkedSaleEnded || isSaleClosed(saleEndsAt);
-  const saleNotStarted = hasFutureSaleStart;
+  const saleClosed = isSaleEndedFromApi || isSaleClosed(saleEndsAt);
   const selectedChainId = expectedChainId;
   const moonPayCurrencyCode = resolveMoonPayCurrencyCode(selectedChainId);
   const moonPayTopUpAmount = useMemo(
     () =>
       resolveMoonPayTopUpAmount({
-        requiredAmount: amountEthEquivalent,
+        requiredAmount: amountEthEquivalent ?? 0,
         currentBalance: walletBalanceEth,
       }),
     [amountEthEquivalent, walletBalanceEth],
@@ -236,7 +237,6 @@ const ICOTerminal = () => {
 
   const ctaLabel = useMemo(() => {
     if (saleClosed) return appText.icoTerminal.cta.saleClosed;
-    if (saleNotStarted) return appText.icoTerminal.cta.saleNotStarted;
     if (isConnecting) return appText.icoTerminal.cta.connecting;
     if (isActionPending || processing) return appText.icoTerminal.cta.processing;
     if (account.length === 0) return appText.icoTerminal.cta.connectWallet;
@@ -247,7 +247,7 @@ const ICOTerminal = () => {
     if (paymentMethod === "USDC") return appText.icoTerminal.cta.buyWithUsdc;
     if (paymentMethod === "USDT") return appText.icoTerminal.cta.buyWithUsdt;
     return `${appText.icoTerminal.cta.acquirePrefix}${tokenSymbol}`;
-  }, [account.length, chainId, isActionPending, isConnecting, paymentMethod, processing, saleClosed, saleNotStarted, selectedChainId, tokenSymbol]);
+  }, [account.length, chainId, isActionPending, isConnecting, paymentMethod, processing, saleClosed, selectedChainId, tokenSymbol]);
 
   const visibleClaimActions = useMemo<ClaimAction[]>(() => {
     if (!icoDetails || !userIcoValue) return [];
@@ -327,6 +327,10 @@ const ICOTerminal = () => {
   };
 
   const handleAcquire = async () => {
+    if (saleNotStarted) {
+      return;
+    }
+
     if (saleClosed) {
       toast({
         variant: "destructive",
@@ -336,11 +340,16 @@ const ICOTerminal = () => {
       return;
     }
 
-    if (saleNotStarted) {
+    if (account.length === 0) {
+      connectWallet();
+      return;
+    }
+
+    if (isQuotePending || payAmountResolved === null || amountEthEquivalent === null) {
       toast({
         variant: "destructive",
-        title: appText.icoTerminal.toasts.saleNotStartedTitle,
-        description: appText.icoTerminal.toasts.saleNotStartedDescription,
+        title: appText.icoTerminal.toasts.invalidAmountTitle,
+        description: appText.icoTerminal.inputErrors.quotePending,
       });
       return;
     }
@@ -351,11 +360,6 @@ const ICOTerminal = () => {
         title: appText.icoTerminal.toasts.invalidAmountTitle,
         description: inputError,
       });
-      return;
-    }
-
-    if (account.length === 0) {
-      connectWallet();
       return;
     }
 
@@ -631,14 +635,14 @@ const ICOTerminal = () => {
         : walletError;
 
   const acquireDisabled =
-    saleClosed || saleNotStarted || processing || isConnecting || isActionPending || !countdown || countdown.total === 0;
+    processing || isConnecting || isActionPending || !countdown || countdown.total === 0 || isQuotePending;
   const claimDisabled = processing || isConnecting || isActionPending;
   const addTokenDisabled = addingToken || processing || isConnecting || isActionPending;
   const moonPayDisabled = processing || isConnecting || isActionPending;
   const showAddTokenButton = canAddTokenToWallet;
   const showMoonPayTopUpButton =
     !saleClosed &&
-    !saleNotStarted &&
+    !isQuotePending &&
     account.length > 0 &&
     !hasInvalidAmount &&
     !hasExceededMaxContribution &&
@@ -652,28 +656,35 @@ const ICOTerminal = () => {
       initial={{ opacity: 0, x: 40 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1], delay: 0.2 }}
-      className="glass-surface rounded-2xl p-4 lg:p-5 flex flex-col gap-2.5 max-w-sm w-full mx-auto lg:min-h-[calc(100vh-6rem)]"
+      className="glass-surface rounded-2xl p-4 lg:p-5 flex flex-col gap-2.5 max-w-sm w-full mx-auto"
     >
       <TerminalHeader />
       <TerminalMarketMeta tokenPriceUsd={tokenPriceUsd} section="tokenPrice" />
 
       <SaleStatsGrid
-        raisedUsd={raisedUsd}
+        totalRaisedUsdt={totalRaisedUsdt}
+        totalRaisedUsdc={totalRaisedUsdc}
+        totalRaisedEth={totalRaisedEth}
+        softCap={softCap}
         hardCapUsd={hardCapUsd}
         soldTokens={soldTokens}
-        softCap={softCap}
       />
 
       <SaleProgress progressPct={progressPct} />
 
-      {hasApiMarkedSaleEnded ? (
-        <div className="rounded-xl border border-primary/25 bg-primary/10 px-3 py-3 text-center neon-border shadow-[0_0_0_1px_rgba(0,245,255,0.04)]">
-          <p className="font-mono text-sm uppercase tracking-wide text-primary">
-            {appText.icoTerminal.labels.countdownEndedTitle}
+      {isSaleEndedFromApi ? (
+        <div className="space-y-1.5">
+          <p className="text-center text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
+            {appText.icoTerminal.labels.saleStatus}
           </p>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {appText.icoTerminal.labels.countdownEndedDescription}
-          </p>
+          <div className="rounded-xl border border-primary/25 bg-primary/5 px-3 py-3 text-center">
+            <p className="font-mono text-sm uppercase tracking-wide text-primary">
+              {appText.icoTerminal.labels.saleEnded}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {appText.icoTerminal.labels.saleEndedDescription}
+            </p>
+          </div>
         </div>
       ) : countdown ? (
         <CountdownDisplay countdown={countdown} label={countdownLabel} />
@@ -693,8 +704,6 @@ const ICOTerminal = () => {
         tokenAmountInput={tokenAmountInput}
         isCalculating={isAmountCalculating}
         tokenSymbol={tokenSymbol}
-        tokensPerEth={tokensPerEthForCalc}
-        usdValue={usdValue}
         onTokenAmountInputChange={handleTokenAmountInputChange}
       />
 
@@ -705,9 +714,6 @@ const ICOTerminal = () => {
       ) : null}
 
       <WalletMeta
-        account={account}
-        balanceEth={balanceEth}
-        referral={getStoredReferral() || appText.icoTerminal.labels.referralNone}
         globalError={globalError}
         inputError={inputError}
       />

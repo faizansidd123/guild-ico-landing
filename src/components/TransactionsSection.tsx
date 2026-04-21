@@ -1,62 +1,59 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 
 import { appText } from "@/content/app-text";
-import { numberFormatter, tokenFormatter, usdValueFormatter } from "@/lib/formatters";
-import {
-  getContributionLabel,
-  getExplorerLink,
-  getTransactionDateLabel,
-  getTransactionHashLabel,
-  getTransactionStatusVariant,
-  getWalletLabel,
-} from "@/lib/transactions-view";
-import { useWalletAuth } from "@/hooks/use-wallet-auth";
+import { siteConfig } from "@/config/site";
+import { dateTimeFormatter, numberFormatter } from "@/lib/formatters";
 import { useUserTransactions } from "@/hooks/use-user-transactions";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { setTransactionsPage, setTransactionsPageSize } from "@/store/transactionsSlice";
 import { SectionBlock, SectionContainer, SectionHeading } from "@/components/layout/section-primitives";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+const apiNumberFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 12,
+});
+
+const truncateMiddle = (value: string, startChars: number, endChars: number) => {
+  if (!value || value.length <= startChars + endChars) {
+    return value;
+  }
+
+  return `${value.slice(0, startChars)}...${value.slice(-endChars)}`;
+};
+
+const normalizeUrlBase = (value: string) => (value.endsWith("/") ? value : `${value}/`);
+
 const TransactionsSection = () => {
-  const dispatch = useAppDispatch();
-  const { page, pageSize } = useAppSelector((state) => state.transactions);
-  const { connectedAddress } = useWalletAuth();
-  const { data, error, isLoading, isFetching } = useUserTransactions({ page, pageSize, walletAddress: connectedAddress });
+  const page = 1;
+  const pageSize = 15;
+  const { data, error, isLoading, isFetching } = useUserTransactions({ page, pageSize });
+  const transactionExplorerBaseUrl = normalizeUrlBase(siteConfig.explorers.baseSepoliaTx);
 
   const transactions = useMemo(() => data?.items ?? [], [data?.items]);
   const total = data?.total || 0;
-  const totalPages = data?.totalPages || 1;
-  const activePage = Math.min(Math.max(page, 1), totalPages);
-
-  useEffect(() => {
-    if (activePage !== page) {
-      dispatch(setTransactionsPage(activePage));
-    }
-  }, [activePage, dispatch, page]);
-
-  const start = transactions.length > 0 ? (activePage - 1) * pageSize + 1 : 0;
-  const end = transactions.length > 0 ? start + transactions.length - 1 : 0;
 
   const transactionRows = useMemo(
     () =>
       transactions.map((transaction) => ({
         id: transaction.id,
-        dateLabel: getTransactionDateLabel(transaction.createdAt),
-        walletLabel: getWalletLabel(transaction.walletAddress),
-        txLabel: getTransactionHashLabel(transaction),
-        txLink: getExplorerLink(transaction),
-        chain: transaction.chain,
-        paymentMethod: transaction.paymentMethod,
-        contributionLabel: getContributionLabel(transaction),
-        tokenAmount: tokenFormatter.format(transaction.tokenAmount),
-        usdValue: usdValueFormatter.format(transaction.usdValue),
-        statusLabel: transaction.status.toUpperCase(),
-        statusVariant: getTransactionStatusVariant(transaction.status),
+        dateLabel: dateTimeFormatter.format(new Date(transaction.createdAt)),
+        walletAddress: transaction.walletAddress || "--",
+        walletAddressLabel:
+          transaction.walletAddress && transaction.walletAddress !== "--"
+            ? truncateMiddle(transaction.walletAddress, 3, 3)
+            : "--",
+        icoName: transaction.icoName || "--",
+        transactionType: transaction.transactionType || "--",
+        currency: transaction.currency || "--",
+        amountLabel:
+          transaction.amountRaw === null || transaction.amountRaw === undefined
+            ? "--"
+            : apiNumberFormatter.format(transaction.amountRaw),
+        tokenAmount: apiNumberFormatter.format(transaction.tokenAmount),
+        txHash: transaction.txHash || "--",
+        txHashUrl:
+          transaction.txHash && transaction.txHash !== "--" ? `${transactionExplorerBaseUrl}${transaction.txHash}` : "",
       })),
-    [transactions],
+    [transactionExplorerBaseUrl, transactions],
   );
 
   return (
@@ -85,22 +82,6 @@ const TransactionsSection = () => {
             <p className="text-xs font-mono text-muted-foreground">
               {appText.transactions.totalRecordsPrefix} {numberFormatter.format(total)} {isFetching ? appText.transactions.syncingSuffix : ""}
             </p>
-            <label className="text-xs font-mono text-muted-foreground flex items-center gap-2">
-              {appText.transactions.rowsLabel}
-              <select
-                className="bg-surface border border-border rounded-md px-2 py-1 text-foreground"
-                value={String(pageSize)}
-                onChange={(event) => {
-                  dispatch(setTransactionsPageSize(Number(event.target.value)));
-                }}
-              >
-                {[5, 10, 20, 30, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
 
           {error instanceof Error ? (
@@ -112,25 +93,24 @@ const TransactionsSection = () => {
               <TableRow>
                 <TableHead>{appText.transactions.tableHeaders.date}</TableHead>
                 <TableHead>{appText.transactions.tableHeaders.wallet}</TableHead>
-                <TableHead>{appText.transactions.tableHeaders.txHash}</TableHead>
-                <TableHead>{appText.transactions.tableHeaders.chain}</TableHead>
-                <TableHead>{appText.transactions.tableHeaders.method}</TableHead>
-                <TableHead>{appText.transactions.tableHeaders.contribution}</TableHead>
+                <TableHead>{appText.transactions.tableHeaders.ico}</TableHead>
+                <TableHead>{appText.transactions.tableHeaders.type}</TableHead>
+                <TableHead>{appText.transactions.tableHeaders.currency}</TableHead>
+                <TableHead>{appText.transactions.tableHeaders.amount}</TableHead>
                 <TableHead>{appText.transactions.tableHeaders.tokens}</TableHead>
-                <TableHead>{appText.transactions.tableHeaders.value}</TableHead>
-                <TableHead>{appText.transactions.tableHeaders.status}</TableHead>
+                <TableHead>{appText.transactions.tableHeaders.txHash}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     {appText.transactions.loadingText}
                   </TableCell>
                 </TableRow>
               ) : transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     {appText.transactions.noTransactionsText}
                   </TableCell>
                 </TableRow>
@@ -139,28 +119,28 @@ const TransactionsSection = () => {
                   return (
                     <TableRow key={transaction.id}>
                       <TableCell>{transaction.dateLabel}</TableCell>
-                      <TableCell className="font-mono text-xs">{transaction.walletLabel}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {transaction.txLink ? (
+                      <TableCell className="font-mono text-xs max-w-[16rem]">
+                        <span title={transaction.walletAddress}>{transaction.walletAddressLabel}</span>
+                      </TableCell>
+                      <TableCell>{transaction.icoName}</TableCell>
+                      <TableCell>{transaction.transactionType}</TableCell>
+                      <TableCell>{transaction.currency}</TableCell>
+                      <TableCell className="font-mono text-xs">{transaction.amountLabel}</TableCell>
+                      <TableCell>{transaction.tokenAmount}</TableCell>
+                      <TableCell className="font-mono text-xs break-all max-w-[18rem]">
+                        {transaction.txHashUrl ? (
                           <a
-                            className="text-primary hover:underline"
-                            href={transaction.txLink}
+                            href={transaction.txHashUrl}
                             target="_blank"
                             rel="noreferrer noopener"
+                            className="hover:text-primary transition-colors"
+                            title={transaction.txHash}
                           >
-                            {transaction.txLabel}
+                            {transaction.txHash}
                           </a>
                         ) : (
-                          transaction.txLabel
+                          transaction.txHash
                         )}
-                      </TableCell>
-                      <TableCell>{transaction.chain}</TableCell>
-                      <TableCell>{transaction.paymentMethod}</TableCell>
-                      <TableCell className="font-mono text-xs">{transaction.contributionLabel}</TableCell>
-                      <TableCell>{transaction.tokenAmount}</TableCell>
-                      <TableCell>{transaction.usdValue}</TableCell>
-                      <TableCell>
-                        <Badge variant={transaction.statusVariant}>{transaction.statusLabel}</Badge>
                       </TableCell>
                     </TableRow>
                   );
@@ -169,32 +149,9 @@ const TransactionsSection = () => {
             </TableBody>
           </Table>
 
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs font-mono text-muted-foreground">
-              {appText.transactions.showingPrefix} {start}-{end} {appText.transactions.ofWord} {numberFormatter.format(total)}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => dispatch(setTransactionsPage(activePage - 1))}
-                disabled={activePage <= 1 || isFetching}
-              >
-                {appText.transactions.previous}
-              </Button>
-              <span className="text-xs font-mono text-muted-foreground">
-                {appText.transactions.pageLabel} {activePage} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => dispatch(setTransactionsPage(activePage + 1))}
-                disabled={activePage >= totalPages || isFetching}
-              >
-                {appText.transactions.next}
-              </Button>
-            </div>
-          </div>
+          <p className="mt-4 text-xs font-mono text-muted-foreground">
+            {appText.transactions.showingPrefix} {numberFormatter.format(transactions.length)} {appText.transactions.ofWord} {numberFormatter.format(total)}
+          </p>
         </motion.div>
       </SectionContainer>
     </SectionBlock>

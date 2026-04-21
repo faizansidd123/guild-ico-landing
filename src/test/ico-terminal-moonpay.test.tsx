@@ -1,11 +1,14 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { saleConfig } from "@/config/sale";
 
 const mockState = vi.hoisted(() => ({
   openMoonPay: vi.fn(),
   trackEvent: vi.fn(),
   connectWallet: vi.fn(),
+  toast: vi.fn(),
   purchaseNative: vi.fn(),
   purchaseStableCoin: vi.fn(),
   claimToken: vi.fn(),
@@ -27,8 +30,10 @@ const mockState = vi.hoisted(() => ({
   icoDetails: {
     tokenName: "Guild Token",
     tokenSymbol: "GILD",
+    tokenAddress: "0xC106e3Af20B0742f713ef4c28810dF39E23DA070",
     tokenPriceUsd: 0.05,
     tokensPerEth: 20000,
+    softCap: 500,
     hardCapUsd: 7000000,
     raisedUsd: 100000,
     soldTokens: 1000,
@@ -127,6 +132,10 @@ vi.mock("@/lib/analytics", () => ({
   trackEvent: mockState.trackEvent,
 }));
 
+vi.mock("@/components/ui/use-toast", () => ({
+  toast: mockState.toast,
+}));
+
 import ICOTerminal from "@/components/ICOTerminal";
 
 const renderTerminal = () => {
@@ -162,11 +171,13 @@ describe("ICOTerminal MoonPay top-up", () => {
       usdValue: 1000,
       tokenSymbol: "GILD",
     };
+    mockState.conversionQuote.isFetching = false;
+    mockState.conversionQuote.error = null;
     mockState.icoDetails.saleStatus = "active";
     mockState.icoDetails.saleResult = "";
+    mockState.icoDetails.saleStartsAt = "";
     mockState.icoDetails.isActive = true;
     mockState.icoDetails.isFinalized = false;
-    mockState.icoDetails.saleStartsAt = "";
     mockState.icoDetails.totalRaisedEth = 0;
     mockState.icoDetails.totalRaisedUsdt = 0;
     mockState.icoDetails.totalRaisedUsdc = 0;
@@ -201,14 +212,14 @@ describe("ICOTerminal MoonPay top-up", () => {
     );
   });
 
-  it("disables acquisition before the ICO start time is reached", () => {
-    mockState.icoDetails.saleStartsAt = "2026-12-01T00:00:00.000Z";
+  it("derives sold progress from sold tokens divided by hard cap", () => {
+    mockState.icoDetails.hardCapUsd = 10000;
+    mockState.icoDetails.soldTokens = 11;
+    mockState.icoDetails.progressPct = 99;
 
     renderTerminal();
 
-    expect(screen.getByText("Starts in")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /sale not started/i })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: /moonpay/i })).not.toBeInTheDocument();
+    expect(screen.getByText("0.11% SOLD")).toBeInTheDocument();
   });
 
   it("hides the MoonPay top-up action when the wallet balance already covers the purchase", () => {
@@ -217,6 +228,46 @@ describe("ICOTerminal MoonPay top-up", () => {
     renderTerminal();
 
     expect(screen.queryByRole("button", { name: /moonpay/i })).not.toBeInTheDocument();
+  });
+
+  it("formats the you pay value to a maximum of five decimal places", () => {
+    mockState.conversionQuote.data = {
+      paymentMethod: "ETH",
+      amountIn: 1.239876,
+      amountEthEquivalent: 1.239876,
+      tokenAmount: 20000,
+      tokenPriceUsd: 0.05,
+      tokensPerEth: 20000,
+      usdValue: 1000,
+      tokenSymbol: "GILD",
+    };
+
+    renderTerminal();
+
+    expect(screen.getByText("1.23988")).toBeInTheDocument();
+  });
+
+  it("holds the you pay value until the quote resolves", () => {
+    mockState.conversionQuote.data = undefined;
+    mockState.conversionQuote.isFetching = true;
+
+    renderTerminal();
+
+    expect(screen.getByText("--")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /moonpay/i })).not.toBeInTheDocument();
+  });
+
+  it("connects the wallet without showing a false insufficient-balance error when disconnected", () => {
+    mockState.walletAuth.connectedAddress = "";
+    mockState.walletAuth.balanceEth = "0";
+
+    renderTerminal();
+
+    expect(screen.queryByText("Insufficient wallet balance.")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "CONNECT WALLET" }));
+
+    expect(mockState.connectWallet).toHaveBeenCalledTimes(1);
   });
 
   it("shows the claim token action only after the ICO is finalized with success", () => {
@@ -233,6 +284,40 @@ describe("ICOTerminal MoonPay top-up", () => {
     expect(screen.queryByRole("button", { name: /claim stable refund/i })).not.toBeInTheDocument();
   });
 
+  it("replaces the countdown with an ended message when the ICO API marks the sale as ended and finalized", () => {
+    mockState.icoDetails.saleStatus = "ended";
+    mockState.icoDetails.saleResult = "success";
+    mockState.icoDetails.isActive = false;
+    mockState.icoDetails.isFinalized = true;
+
+    renderTerminal();
+
+    expect(screen.getByText(/sale status/i)).toBeInTheDocument();
+    expect(screen.getByText(/sale ended/i)).toBeInTheDocument();
+    expect(screen.getByText(/this sale phase has ended\./i)).toBeInTheDocument();
+    expect(screen.queryByText("Ends in")).not.toBeInTheDocument();
+  });
+
+  it("shows a disabled sale-closed CTA when the ICO API marks the sale as ended and finalized", () => {
+    mockState.icoDetails.saleStatus = "ended";
+    mockState.icoDetails.saleResult = "success";
+    mockState.icoDetails.isActive = false;
+    mockState.icoDetails.isFinalized = true;
+
+    renderTerminal();
+
+    expect(screen.getByRole("button", { name: /sale closed/i })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /top up .* moonpay/i })).not.toBeInTheDocument();
+  });
+
+  it("disables the acquire button until the ICO start time is reached", () => {
+    mockState.icoDetails.saleStartsAt = "2026-12-01T00:00:00.000Z";
+
+    renderTerminal();
+
+    expect(screen.getByRole("button", { name: /acquire \$gild/i })).toBeDisabled();
+  });
+
   it("does not show claim actions before the ICO is finalized", () => {
     mockState.icoDetails.saleStatus = "ended";
     mockState.icoDetails.saleResult = "success";
@@ -244,20 +329,6 @@ describe("ICOTerminal MoonPay top-up", () => {
     expect(screen.queryByRole("button", { name: /claim \$gild token/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /claim native refund/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /claim stable refund/i })).not.toBeInTheDocument();
-  });
-
-  it("replaces the countdown with an ended message when the API marks the ICO as ended", () => {
-    mockState.icoDetails.saleStatus = "ended";
-    mockState.icoDetails.saleResult = "success";
-    mockState.icoDetails.isActive = false;
-    mockState.icoDetails.isFinalized = true;
-
-    renderTerminal();
-
-    expect(screen.getByText("SALE ENDED")).toBeInTheDocument();
-    expect(screen.getByText("This sale phase has ended.")).toBeInTheDocument();
-    expect(screen.queryByText("Ends in")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /sale closed/i })).toBeDisabled();
   });
 
   it("does not show the claim token action when the wallet has no claimable tokens", () => {
@@ -300,5 +371,38 @@ describe("ICOTerminal MoonPay top-up", () => {
 
     expect(screen.queryByRole("button", { name: /claim native refund/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /claim stable refund/i })).not.toBeInTheDocument();
+  });
+
+  it("uses the selected stable tab when claiming a stable refund", async () => {
+    mockState.icoDetails.saleStatus = "ended";
+    mockState.icoDetails.saleResult = "failed";
+    mockState.icoDetails.isActive = false;
+    mockState.icoDetails.isFinalized = true;
+    mockState.userIcoValue.eth = 0;
+    mockState.userIcoValue.usdc = 1.25;
+    mockState.userIcoValue.usdt = 2.5;
+    mockState.claimRefundStable.mockResolvedValue({
+      transactionHash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    });
+
+    renderTerminal();
+
+    fireEvent.click(screen.getByRole("button", { name: "USDT" }));
+    fireEvent.click(screen.getByRole("button", { name: /claim stable refund/i }));
+
+    await waitFor(() => {
+      expect(mockState.claimRefundStable).toHaveBeenCalledWith({
+        saleContractAddress: saleConfig.saleContractAddress,
+        stableCoin: saleConfig.usdtContractAddress,
+      });
+    });
+
+    expect(mockState.trackEvent).toHaveBeenCalledWith(
+      "claim_submitted",
+      expect.objectContaining({
+        action: "claimRefundStable",
+        stableCoin: "USDT",
+      }),
+    );
   });
 });

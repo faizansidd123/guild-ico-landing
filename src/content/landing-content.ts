@@ -58,10 +58,8 @@ export const navLinks: readonly NavItem[] = [
   { href: "#platform", label: "Platform" },
   { href: "#token-sale", label: "Sale" },
   { href: "#transactions", label: "Transactions" },
-  { href: "#tokenomics", label: "Tokenomics" },
-  { href: "#roadmap", label: "Roadmap" },
-  { href: "#faq", label: "FAQ" },
   { href: "#community", label: "Community" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export const heroCopy: HeroCopy = {
@@ -162,7 +160,7 @@ export const faqItems: readonly FaqItem[] = [
   },
   {
     question: "Where can I verify contracts and audits?",
-    answer: "Use the Trust Center section for contract addresses, audit links, and explorer references.",
+    answer: "Use the Trust Center section for the live token sale and Guild token contract addresses.",
   },
   {
     question: "Are purchases refundable?",

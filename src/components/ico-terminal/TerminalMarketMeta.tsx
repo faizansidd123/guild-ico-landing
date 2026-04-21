@@ -6,7 +6,7 @@ type TerminalMarketMetaProps = {
 };
 
 const TerminalMarketMeta = ({ tokenPriceUsd, section = "all" }: TerminalMarketMetaProps) => {
-  const tokenPriceLabel = tokenPriceUsd === null ? "--" : `$${tokenPriceUsd.toFixed(2)}`;
+  const tokenPriceLabel = tokenPriceUsd === null || tokenPriceUsd <= 0 ? "--" : `$${(1 / tokenPriceUsd).toFixed(2)}`;
   const showTokenPrice = section === "all" || section === "tokenPrice";
   const showNetwork = section === "all" || section === "network";
 

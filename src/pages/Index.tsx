@@ -4,15 +4,11 @@ import HeroLeft from "@/components/HeroLeft";
 import HeroCenter from "@/components/HeroCenter";
 import ICOTerminal from "@/components/ICOTerminal";
 import PlatformStory from "@/components/PlatformStory";
-import PlatformFeatures from "@/components/PlatformFeatures";
 import TokenUtility from "@/components/TokenUtility";
 import TransactionsSection from "@/components/TransactionsSection";
 import CommunitySection from "@/components/CommunitySection";
 import TrustSection from "@/components/TrustSection";
-import TokenomicsSection from "@/components/TokenomicsSection";
-import RoadmapSection from "@/components/RoadmapSection";
 import FAQSection from "@/components/FAQSection";
-import WaitlistSection from "@/components/WaitlistSection";
 import GuildFooter from "@/components/GuildFooter";
 
 const Index = () => {
@@ -32,14 +28,10 @@ const Index = () => {
 
       <div className="relative z-10">
         <PlatformStory />
-        <PlatformFeatures />
         <TokenUtility />
         <TransactionsSection />
         <TrustSection />
-        <TokenomicsSection />
-        <RoadmapSection />
         <CommunitySection />
-        <WaitlistSection />
         <FAQSection />
         <GuildFooter />
       </div>

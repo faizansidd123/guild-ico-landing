@@ -1,6 +1,6 @@
 import { saleConfig } from "@/config/sale";
-import { MIN_NON_ZERO, clampPercentage, readBoolean, readNumber } from "@/lib/number-utils";
-import { isRecord, readString, toLowerTrimmed, toUpperTrimmed } from "@/lib/type-guards";
+import { MIN_NON_ZERO, clampPercentage, readBoolean, readNumber, safeDivide, toFiniteNumber } from "@/lib/number-utils";
+import { isRecord, readRecord, readString, toLowerTrimmed, toUpperTrimmed } from "@/lib/type-guards";
 import type {
   ConversionQuote,
   IcoDetails,
@@ -61,9 +61,11 @@ export const toTransactionStatus = (value: string): UserTransactionStatus => {
 export const buildDefaultIcoDetails = (): IcoDetails => ({
   tokenName: saleConfig.tokenName,
   tokenSymbol: saleConfig.tokenSymbol,
+  tokenAddress: saleConfig.walletTokenAddress,
   tokenPriceUsd: saleConfig.tokenPriceUsd,
   tokensPerEth: saleConfig.tokensPerEth,
   raisedUsd: 0,
+  softCap: 0,
   hardCapUsd: saleConfig.hardCapUsd,
   soldTokens: 0,
   remainingTokens: saleConfig.totalTokensForSale,
@@ -102,24 +104,29 @@ export const normalizeIcoDetails = (payload: unknown, fallback: IcoDetails): Ico
   const totalRaisedUsdc = readNumber(data, ["totalRaisedUSDC", "totalRaisedUsdc", "total_raised_usdc"], fallback.totalRaisedUsdc);
   const fallbackRaisedUsd = totalRaisedUsdt + totalRaisedUsdc + totalRaisedEth * tokensPerEth * tokenPriceUsd;
   const raisedUsd = readNumber(data, ["raisedUsd", "raised_usd", "totalRaisedUsd"], fallbackRaisedUsd || fallback.raisedUsd);
+  const softCap = readNumber(data, ["softCapUsd", "soft_cap_usd", "softCap", "soft_cap"], fallback.softCap);
   const hardCapUsd = readNumber(data, ["hardCapUsd", "hard_cap_usd", "hardCap", "hard_cap"], fallback.hardCapUsd);
-  const softCap = readNumber(data, ["softCapUsd", "soft_cap_usd", "softCap", "soft_cap"], fallback.softCap ?? Number.NaN);
   const soldTokens = readNumber(data, ["soldTokens", "sold_tokens", "totalTokensSold", "total_tokens_sold"], fallback.soldTokens);
   const remainingTokens = readNumber(
     data,
     ["remainingTokens", "remaining_tokens"],
     Math.max(0, saleConfig.totalTokensForSale - soldTokens),
   );
-  const progressPct = readNumber(data, ["progressPct", "progress", "progress_pct"], (raisedUsd / Math.max(hardCapUsd, 1)) * 100);
+  const progressPct = safeDivide(soldTokens, hardCapUsd, 0) * 100;
 
   return {
     tokenName: readString(data, ["tokenName", "token_name", "name"], fallback.tokenName),
     tokenSymbol: readTokenSymbol(data, fallback.tokenSymbol),
+    tokenAddress: readString(
+      data,
+      ["tokenAddress", "token_address", "tokenContractAddress", "token_contract_address", "guildTokenAddress", "guild_token_address"],
+      fallback.tokenAddress,
+    ),
     tokenPriceUsd,
     tokensPerEth,
     raisedUsd,
+    softCap,
     hardCapUsd,
-    softCap: Number.isFinite(softCap) ? softCap : undefined,
     soldTokens,
     remainingTokens: Math.max(0, remainingTokens),
     progressPct: clampPercentage(progressPct),
@@ -248,7 +255,10 @@ export const paginateTransactions = (
 
 export const normalizeTransaction = (payload: unknown, fallbackId: number): UserTransaction => {
   const data = isRecord(payload) ? payload : {};
-  const paymentMethod = toPaymentMethod(readString(data, ["paymentMethod", "payment_method", "method", "currency"], "ETH"));
+  const nestedIco = readRecord(data, ["icoId", "ico", "sale"]);
+  const currency = readString(data, ["currency", "paymentMethod", "payment_method", "method"], "");
+  const paymentMethod = toPaymentMethod(currency || readString(data, ["paymentMethod", "payment_method", "method"], "ETH"));
+  const amountRaw = toFiniteNumber(data.amount);
   const amountInFallback = readNumber(data, ["amountIn", "amount", "amount_in"], 0);
   const tokenAmountFallback =
     isStablePayment(paymentMethod)
@@ -261,6 +271,7 @@ export const normalizeTransaction = (payload: unknown, fallbackId: number): User
 
   const txHash = readString(data, ["txHash", "tx_hash", "hash", "transactionHash"], "");
   const createdAtRaw = readString(data, ["createdAt", "created_at", "timestamp", "time"], new Date().toISOString());
+  const updatedAtRaw = readString(data, ["updatedAt", "updated_at"], createdAtRaw);
 
   return {
     id: readString(data, ["id", "_id", "transactionId", "transaction_id"], txHash || `tx-${fallbackId}`),
@@ -278,6 +289,11 @@ export const normalizeTransaction = (payload: unknown, fallbackId: number): User
     usdValue: readNumber(data, ["usdValue", "usd_value", "amountUsd", "amount_usd"], tokenAmountFallback * saleConfig.tokenPriceUsd),
     status: toTransactionStatus(readString(data, ["status", "state", "type"], "pending")),
     createdAt: ensureIsoDate(createdAtRaw, new Date().toISOString()),
+    updatedAt: ensureIsoDate(updatedAtRaw, ensureIsoDate(createdAtRaw, new Date().toISOString())),
+    icoName: nestedIco ? readString(nestedIco, ["name", "tokenName", "token_name"], "") : "",
+    currency,
+    transactionType: readString(data, ["type", "status", "state"], ""),
+    amountRaw,
   };
 };
 

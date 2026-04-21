@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import communityImg from "@/assets/elements_for_fans.webp";
 import { SectionBlock, SectionContainer, SectionHeading } from "@/components/layout/section-primitives";
+import { siteConfig } from "@/config/site";
 import { appText } from "@/content/app-text";
 import { communityCopy } from "@/content/landing-content";
 
 const CommunitySection = () => {
   return (
-    <SectionBlock id="community-visual" className="overflow-hidden">
+    <SectionBlock id="community" className="overflow-hidden">
       <SectionContainer className="text-center">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -18,13 +19,21 @@ const CommunitySection = () => {
             eyebrow={communityCopy.eyebrow}
             title={
               <>
-                {communityCopy.titlePrefix} <span className="text-primary text-glow-cyan">{communityCopy.titleAccent}</span>
+                {communityCopy.titlePrefix}{" "}
+                <a
+                  href={siteConfig.community.redirectUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-primary text-glow-cyan cursor-pointer transition-opacity hover:opacity-85"
+                >
+                  {communityCopy.titleAccent}
+                </a>
               </>
             }
             description={communityCopy.description}
             titleClassName="text-3xl lg:text-5xl text-foreground mb-1"
             descriptionClassName="text-lg max-w-xl"
-            className="mb-8"
+            className="mb-6"
           />
         </motion.div>
 

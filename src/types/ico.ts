@@ -3,11 +3,12 @@ export type PaymentMethod = "ETH" | "USDT" | "USDC";
 export type IcoDetails = {
   tokenName: string;
   tokenSymbol: string;
+  tokenAddress: string;
   tokenPriceUsd: number;
   tokensPerEth: number;
   raisedUsd: number;
+  softCap: number;
   hardCapUsd: number;
-  softCap?: number;
   soldTokens: number;
   remainingTokens: number;
   progressPct: number;
@@ -57,6 +58,11 @@ export type UserTransaction = {
   usdValue: number;
   status: UserTransactionStatus;
   createdAt: string;
+  updatedAt?: string;
+  icoName?: string;
+  currency?: string;
+  transactionType?: string;
+  amountRaw?: number | null;
 };
 
 export type PaginatedTransactions = {

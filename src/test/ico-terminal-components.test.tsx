@@ -24,7 +24,7 @@ describe("ico terminal components", () => {
   it("renders market metadata with token price", () => {
     render(<TerminalMarketMeta tokenPriceUsd={0.05} />);
     expect(screen.getByText("TOKEN PRICE")).toBeInTheDocument();
-    expect(screen.getByText("$0.05")).toBeInTheDocument();
+    expect(screen.getByText("$20.00")).toBeInTheDocument();
     expect(screen.getByText("NETWORK")).toBeInTheDocument();
     expect(screen.getByText("Base")).toBeInTheDocument();
   });
@@ -67,8 +67,6 @@ describe("ico terminal components", () => {
         payAmountDisplay="2.5"
         tokenAmountInput="50000"
         tokenSymbol="GILD"
-        tokensPerEth={20000}
-        usdValue={50}
         onTokenAmountInputChange={onTokenChange}
       />,
     );
@@ -91,8 +89,6 @@ describe("ico terminal components", () => {
         payAmountDisplay="1"
         tokenAmountInput="20000"
         tokenSymbol="GILD"
-        tokensPerEth={20000}
-        usdValue={50}
         onTokenAmountInputChange={onTokenChange}
       />,
     );
@@ -102,11 +98,24 @@ describe("ico terminal components", () => {
   });
 
   it("renders sale stats grid", () => {
-    render(<SaleStatsGrid raisedUsd={1000} hardCapUsd={7000000} soldTokens={12000} remainingTokens={88000} />);
+    render(
+      <SaleStatsGrid
+        totalRaisedUsdt={1.007812}
+        totalRaisedUsdc={1.008357}
+        totalRaisedEth={0.00000801364763177}
+        softCap={500}
+        hardCapUsd={7000000}
+        soldTokens={12000}
+      />,
+    );
     expect(screen.getByText("Funds Raised")).toBeInTheDocument();
+    expect(screen.getByText("1.007812 USDT")).toBeInTheDocument();
+    expect(screen.getByText("1.008357 USDC")).toBeInTheDocument();
+    expect(screen.getByText("0.000008 ETH")).toBeInTheDocument();
     expect(screen.getByText("Hard Cap")).toBeInTheDocument();
     expect(screen.getByText("Tokens Sold")).toBeInTheDocument();
     expect(screen.getByText("Soft cap")).toBeInTheDocument();
+    expect(screen.getByText("500")).toBeInTheDocument();
   });
 
   it("renders sale progress percent", () => {
@@ -227,34 +236,22 @@ describe("ico terminal components", () => {
     expect(screen.getByText("Claimable: 1.00024 USDC • 2.001156 USDT")).toBeInTheDocument();
   });
 
-  it("renders wallet meta details and errors", () => {
+  it("renders wallet meta errors", () => {
     render(
       <WalletMeta
-        account="0xabc"
-        balanceEth="1.2345"
-        referral="ref-code"
         globalError="Global error text"
         inputError="Input error text"
       />,
     );
 
-    expect(screen.getByText(/wallet balance/i)).toBeInTheDocument();
     expect(screen.getByText(/global error text/i)).toBeInTheDocument();
     expect(screen.getByText(/input error text/i)).toBeInTheDocument();
   });
 
-  it("hides wallet row when disconnected", () => {
-    render(
-      <WalletMeta
-        account=""
-        balanceEth="0"
-        referral=""
-        globalError=""
-        inputError=""
-      />,
-    );
+  it("renders nothing when wallet meta has no errors", () => {
+    const { container } = render(<WalletMeta globalError="" inputError="" />);
 
-    expect(screen.queryByText(/wallet balance/i)).not.toBeInTheDocument();
+    expect(container.textContent).toBe("");
   });
 
   it("renders wallet action button and invokes callback", () => {

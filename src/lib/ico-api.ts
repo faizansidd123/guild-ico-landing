@@ -5,7 +5,6 @@ import { MIN_NON_ZERO } from "@/lib/number-utils";
 import {
   buildDefaultIcoDetails,
   buildDefaultUserIcoValue,
-  buildMockTransactions,
   isStablePayment,
   normalizeConversionQuote,
   normalizeEthCostQuote,
@@ -273,8 +272,51 @@ const buildQuoteFromPayInput = async (
     usdValue: tokenAmount * fallback.tokenPriceUsd,
   };
 };
+const PUBLIC_TRANSACTION_DUMMY_COUNT = 5;
 
-const MOCK_TRANSACTIONS = buildMockTransactions();
+const buildTransactionApiDummies = (count: number, page: number) => {
+  return Array.from({ length: count }, (_, index) => {
+    const cursor = (Math.max(1, page) - 1) * count + index + 1;
+    const currency: PaymentMethod = cursor % 3 === 0 ? "USDC" : cursor % 2 === 0 ? "USDT" : "ETH";
+    const tokens = Number((5 + cursor * 0.45).toFixed(6));
+    const amount =
+      currency === "ETH" ? Number((0.000008 + cursor * 0.0000004).toFixed(12)) : Number((1 + cursor * 0.125).toFixed(6));
+    const type = cursor % 5 === 0 ? "WITHDRAWAL" : cursor % 4 === 0 ? "CLAIMED" : "PURCHASE";
+
+    return {
+      _id: `demo-api-tx-${cursor}`,
+      userId: `demo-user-${cursor}`,
+      walletAddress: `0x${(5_000_000 + cursor).toString(16).padStart(40, "0")}`,
+      icoId: {
+        _id: "demo-ico-id",
+        name: saleConfig.tokenSymbol,
+      },
+      currency: type === "CLAIMED" ? undefined : currency,
+      amount: type === "CLAIMED" ? undefined : amount,
+      tokens,
+      transactionHash: `0x${(90_000_000 + cursor * 41).toString(16).padStart(64, "0")}`,
+      type,
+      createdAt: new Date(Date.now() - cursor * 1000 * 60 * 17).toISOString(),
+      updatedAt: new Date(Date.now() - cursor * 1000 * 60 * 12).toISOString(),
+    };
+  });
+};
+
+const buildDummyTransactionsPage = (page: number, pageSize: number): PaginatedTransactions => {
+  const payload = {
+    data: {
+      data: buildTransactionApiDummies(PUBLIC_TRANSACTION_DUMMY_COUNT, page),
+      pagination: {
+        total: PUBLIC_TRANSACTION_DUMMY_COUNT,
+        page,
+        limit: pageSize,
+        totalPages: 1,
+      },
+    },
+  };
+
+  return normalizeTransactionsPayload(payload, page, pageSize, []);
+};
 
 export const fetchIcoDetails = async (): Promise<IcoDetails> => {
   const payload = await fetchIcoApiJson(resolveIcoDetailsUrl());
@@ -331,31 +373,16 @@ export const fetchUserTransactions = async ({ page, pageSize, walletAddress }: T
   const safePageSize = Math.max(1, Math.trunc(pageSize));
   const normalizedWalletAddress = (walletAddress || "").trim();
 
-  if (normalizedWalletAddress.length === 0) {
-    return {
-      items: [],
-      page: safePage,
-      pageSize: safePageSize,
-      total: 0,
-      totalPages: 1,
-    };
-  }
-
   try {
     const url = withQueryParams(resolveUserTransactionsUrl(), {
-      walletAddress: normalizedWalletAddress,
+      walletAddress: normalizedWalletAddress || undefined,
       page: safePage,
       limit: safePageSize,
     });
     const payload = await fetchIcoApiJson(url);
-    return normalizeTransactionsPayload(payload, safePage, safePageSize, MOCK_TRANSACTIONS);
+    const normalized = normalizeTransactionsPayload(payload, safePage, safePageSize, []);
+    return normalized.items.length > 0 ? normalized : buildDummyTransactionsPage(safePage, safePageSize);
   } catch {
-    return {
-      items: [],
-      page: safePage,
-      pageSize: safePageSize,
-      total: 0,
-      totalPages: 1,
-    };
+    return buildDummyTransactionsPage(safePage, safePageSize);
   }
 };

@@ -26,8 +26,10 @@ interface ImportMetaEnv {
   readonly VITE_WAITLIST_API_URL?: string;
   readonly VITE_SOCIAL_X_URL?: string;
   readonly VITE_SOCIAL_DISCORD_URL?: string;
-  readonly VITE_SOCIAL_TELEGRAM_URL?: string;
-  readonly VITE_SOCIAL_MEDIUM_URL?: string;
+  readonly VITE_SOCIAL_INSTAGRAM_URL?: string;
+  readonly VITE_SOCIAL_TIKTOK_URL?: string;
+  readonly VITE_LEGAL_TERMS_URL?: string;
+  readonly VITE_LEGAL_PRIVACY_URL?: string;
   readonly VITE_RESOURCE_WHITEPAPER_URL?: string;
   readonly VITE_RESOURCE_AUDIT_URL?: string;
   readonly VITE_RESOURCE_DOCS_URL?: string;
@@ -59,6 +61,7 @@ interface ImportMetaEnv {
   readonly VITE_WALLETCONNECT_PROJECT_ID?: string;
   readonly NEXT_PUBLIC_ALCHEMY_API_KEY?: string;
   readonly NEXT_PUBLIC_BASE_URL?: string;
+  readonly NEXT_PUBLIC_BLOCK_EXPLORER_URL?: string;
   readonly NEXT_PUBLIC_ALCHEMY_POLICY_ID?: string;
   readonly NEXT_PUBLIC_WALLET_TOKEN_ADDRESS?: string;
   readonly NEXT_PUBLIC_WALLET_TOKEN_IMAGE_URL?: string;

@@ -22,7 +22,6 @@ export const useUserTransactions = ({ page, pageSize, walletAddress }: UseUserTr
         pageSize,
         walletAddress: normalizedWalletAddress,
       }),
-    enabled: normalizedWalletAddress.length > 0,
     placeholderData: keepPreviousData,
     staleTime: QUERY_DEFAULTS.userTransactions.staleTime,
     refetchInterval: QUERY_DEFAULTS.userTransactions.refetchInterval,

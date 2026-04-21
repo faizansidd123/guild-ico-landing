@@ -37,14 +37,6 @@ const HeroLeft = () => {
         >
           {appText.heroLeft.explorePlatform}
         </motion.a>
-        <motion.a
-          href="#token-sale"
-          whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(0,200,130,0.35)" }}
-          whileTap={{ scale: 0.98 }}
-          className="px-6 py-3 rounded-lg font-semibold text-sm tracking-wide glass-surface text-foreground"
-        >
-          {appText.heroLeft.joinTokenSale}
-        </motion.a>
       </div>
     </motion.div>
   );

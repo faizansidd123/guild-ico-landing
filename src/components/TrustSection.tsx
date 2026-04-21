@@ -2,14 +2,17 @@ import { Copy } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { appText } from "@/content/app-text";
-import { saleConfig, chainCatalog } from "@/config/sale";
-import { siteConfig } from "@/config/site";
+import { saleConfig } from "@/config/sale";
+import { useIcoDetails } from "@/hooks/use-ico-details";
 import { formatAddress } from "@/lib/eth";
 import { SectionBlock, SectionContainer, SectionHeading } from "@/components/layout/section-primitives";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 
 const TrustSection = () => {
+  const { data: icoDetails } = useIcoDetails();
+  const guildTokenAddress = (icoDetails?.tokenAddress || saleConfig.walletTokenAddress || "").trim();
+
   const copyValue = async (label: string, value: string) => {
     if (value.length === 0) {
       toast({
@@ -38,20 +41,10 @@ const TrustSection = () => {
           <SectionHeading eyebrow={appText.trust.heading.eyebrow} title={appText.trust.heading.title} />
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="max-w-3xl mx-auto">
           <article className="glass-surface rounded-xl p-6">
             <h3 className="text-lg font-semibold mb-4">{appText.trust.addressesTitle}</h3>
             <div className="space-y-3 text-sm">
-              <div className="rounded-lg bg-surface p-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-muted-foreground">{appText.trust.labels.treasury}</p>
-                  <p className="font-mono">{saleConfig.treasuryAddress ? formatAddress(saleConfig.treasuryAddress, 6) : appText.trust.labels.notConfigured}</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => copyValue(appText.trust.copyLabels.treasuryAddress, saleConfig.treasuryAddress)}>
-                  <Copy className="w-4 h-4 mr-2" /> {appText.trust.copyButton}
-                </Button>
-              </div>
-
               <div className="rounded-lg bg-surface p-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-muted-foreground">{appText.trust.labels.tokenSaleContract}</p>
@@ -64,24 +57,13 @@ const TrustSection = () => {
 
               <div className="rounded-lg bg-surface p-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-muted-foreground">{appText.trust.labels.usdcContract}</p>
-                  <p className="font-mono">{saleConfig.usdcContractAddress ? formatAddress(saleConfig.usdcContractAddress, 6) : appText.trust.labels.notConfigured}</p>
+                  <p className="text-muted-foreground">{appText.trust.labels.guildTokenContract}</p>
+                  <p className="font-mono">{guildTokenAddress ? formatAddress(guildTokenAddress, 6) : appText.trust.labels.notConfigured}</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => copyValue(appText.trust.copyLabels.usdcContract, saleConfig.usdcContractAddress)}>
+                <Button variant="outline" size="sm" onClick={() => copyValue(appText.trust.copyLabels.guildTokenContract, guildTokenAddress)}>
                   <Copy className="w-4 h-4 mr-2" /> {appText.trust.copyButton}
                 </Button>
               </div>
-            </div>
-          </article>
-
-          <article className="glass-surface rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4">{appText.trust.verificationTitle}</h3>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <a className="block hover:text-primary" href={siteConfig.resources.audit} target="_blank" rel="noreferrer">{appText.trust.verificationLinks.auditReport}</a>
-              <a className="block hover:text-primary" href={siteConfig.resources.whitepaper} target="_blank" rel="noreferrer">{appText.trust.verificationLinks.whitepaper}</a>
-              <a className="block hover:text-primary" href={siteConfig.resources.docs} target="_blank" rel="noreferrer">{appText.trust.verificationLinks.docs}</a>
-              <a className="block hover:text-primary" href={`${chainCatalog.ethereum.explorerUrl}/address/${saleConfig.saleContractAddress || ""}`} target="_blank" rel="noreferrer">{appText.trust.verificationLinks.etherscan}</a>
-              <a className="block hover:text-primary" href={`${chainCatalog.base.explorerUrl}/address/${saleConfig.saleContractAddress || ""}`} target="_blank" rel="noreferrer">{appText.trust.verificationLinks.basescan}</a>
             </div>
           </article>
         </div>

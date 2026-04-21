@@ -15,7 +15,7 @@ import {
 
 describe("landing content", () => {
   it("has stable navigation links with unique href values", () => {
-    expect(navLinks.length).toBeGreaterThanOrEqual(6);
+    expect(navLinks.length).toBeGreaterThanOrEqual(5);
     const hrefSet = new Set(navLinks.map((item) => item.href));
     expect(hrefSet.size).toBe(navLinks.length);
 
@@ -23,6 +23,10 @@ describe("landing content", () => {
       expect(link.href.startsWith("#")).toBe(true);
       expect(link.label.length).toBeGreaterThan(0);
     });
+
+    expect(navLinks.some((link) => link.href === "#tokenomics")).toBe(false);
+    expect(navLinks.some((link) => link.href === "#roadmap")).toBe(false);
+    expect(navLinks.some((link) => link.href === "#community")).toBe(true);
   });
 
   it("contains non-empty hero and story copy blocks", () => {
