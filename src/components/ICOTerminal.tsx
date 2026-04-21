@@ -725,7 +725,7 @@ const ICOTerminal = () => {
           disabled={addTokenDisabled}
         />
       ) : null}
-
+      
       {visibleClaimActions.length > 0 ? (
         <ClaimActionsPanel
           actions={visibleClaimActions}

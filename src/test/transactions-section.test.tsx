@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { siteConfig } from "@/config/site";
@@ -44,7 +44,7 @@ const mockTransactionsState = {
     total: 2,
     totalPages: 1,
     page: 1,
-    pageSize: 15,
+    pageSize: 10,
   },
   error: null,
   isLoading: false,
@@ -72,14 +72,32 @@ describe("TransactionsSection", () => {
     expect(screen.getByText("PURCHASE")).toBeInTheDocument();
     expect(screen.getByText("CLAIMED")).toBeInTheDocument();
     expect(screen.getByText("USDC")).toBeInTheDocument();
-    expect(screen.getByText("1.008357")).toBeInTheDocument();
+    expect(screen.getByText("1.00836")).toBeInTheDocument();
     expect(screen.getAllByText("5.45")).toHaveLength(2);
     expect(screen.getAllByText("0xb...c5b")).toHaveLength(2);
     expect(screen.getByRole("link", { name: "0x7d835423daab50822b17c03e0967e5e1dc9b446caa5db839ac3cda1995e31897" })).toHaveAttribute(
       "href",
       `${siteConfig.explorers.baseSepoliaTx}0x7d835423daab50822b17c03e0967e5e1dc9b446caa5db839ac3cda1995e31897`,
     );
+    expect(screen.getByText("Rows: 10")).toBeInTheDocument();
     expect(screen.queryByText("Previous")).not.toBeInTheDocument();
-    expect(screen.queryByText("Rows:")).not.toBeInTheDocument();
+  });
+
+  it("restores pagination controls when multiple pages are available", () => {
+    mockTransactionsState.data.totalPages = 3;
+    mockTransactionsState.data.total = 40;
+
+    render(<TransactionsSection />);
+
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+    expect(screen.getByText("Page 1 / 3")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(screen.getByText("Page 2 / 3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeEnabled();
+
+    mockTransactionsState.data.totalPages = 1;
+    mockTransactionsState.data.total = 2;
   });
 });
