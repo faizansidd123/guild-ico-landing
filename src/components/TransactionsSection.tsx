@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
 import { appText } from "@/content/app-text";
@@ -6,10 +6,15 @@ import { siteConfig } from "@/config/site";
 import { dateTimeFormatter, numberFormatter } from "@/lib/formatters";
 import { useUserTransactions } from "@/hooks/use-user-transactions";
 import { SectionBlock, SectionContainer, SectionHeading } from "@/components/layout/section-primitives";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const apiNumberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 12,
+});
+
+const amountColumnFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 5,
 });
 
 const truncateMiddle = (value: string, startChars: number, endChars: number) => {
@@ -23,13 +28,21 @@ const truncateMiddle = (value: string, startChars: number, endChars: number) => 
 const normalizeUrlBase = (value: string) => (value.endsWith("/") ? value : `${value}/`);
 
 const TransactionsSection = () => {
-  const page = 1;
-  const pageSize = 15;
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const { data, error, isLoading, isFetching } = useUserTransactions({ page, pageSize });
   const transactionExplorerBaseUrl = normalizeUrlBase(siteConfig.explorers.baseSepoliaTx);
 
   const transactions = useMemo(() => data?.items ?? [], [data?.items]);
   const total = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
+  const shouldShowPagination = totalPages > 1;
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const transactionRows = useMemo(
     () =>
@@ -47,7 +60,7 @@ const TransactionsSection = () => {
         amountLabel:
           transaction.amountRaw === null || transaction.amountRaw === undefined
             ? "--"
-            : apiNumberFormatter.format(transaction.amountRaw),
+            : amountColumnFormatter.format(transaction.amountRaw),
         tokenAmount: apiNumberFormatter.format(transaction.tokenAmount),
         txHash: transaction.txHash || "--",
         txHashUrl:
@@ -81,6 +94,9 @@ const TransactionsSection = () => {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-mono text-muted-foreground">
               {appText.transactions.totalRecordsPrefix} {numberFormatter.format(total)} {isFetching ? appText.transactions.syncingSuffix : ""}
+            </p>
+            <p className="text-xs font-mono text-muted-foreground">
+              {appText.transactions.rowsLabel} {numberFormatter.format(pageSize)}
             </p>
           </div>
 
@@ -149,9 +165,37 @@ const TransactionsSection = () => {
             </TableBody>
           </Table>
 
-          <p className="mt-4 text-xs font-mono text-muted-foreground">
-            {appText.transactions.showingPrefix} {numberFormatter.format(transactions.length)} {appText.transactions.ofWord} {numberFormatter.format(total)}
-          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs font-mono text-muted-foreground">
+              {appText.transactions.showingPrefix} {numberFormatter.format(transactions.length)} {appText.transactions.ofWord} {numberFormatter.format(total)}
+            </p>
+
+            {shouldShowPagination ? (
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+                >
+                  {appText.transactions.previous}
+                </Button>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {appText.transactions.pageLabel} {numberFormatter.format(page)} / {numberFormatter.format(totalPages)}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+                >
+                  {appText.transactions.next}
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </motion.div>
       </SectionContainer>
     </SectionBlock>
